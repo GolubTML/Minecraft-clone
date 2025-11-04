@@ -12,6 +12,8 @@
 #include "../headers/stb_image.h"
 #include "../headers/shader.h"
 #include "../headers/texture.h"
+#include "../headers/camera.h"
+#include "../headers/block.h"
 
 float quadVertices[] =
 {
@@ -62,22 +64,6 @@ unsigned int indeces[] =
     20,21,22, 22,23,20  // top
 };
 
-std::string openShaderFile(const char* path)
-{
-    std::fstream shader(path);
-
-    if (!shader.is_open())
-    {
-        std::cerr << "Failed to open shader file: " << path << std::endl;
-        return "";
-    }
-
-    std::stringstream buffer;
-    buffer << shader.rdbuf();
-
-    return buffer.str();
-}
-
 void input(GLFWwindow* window, glm::vec3& pos, glm::vec3& front, glm::vec3& up)
 {
     const float speed = 0.05f;
@@ -89,11 +75,6 @@ void input(GLFWwindow* window, glm::vec3& pos, glm::vec3& front, glm::vec3& up)
         pos -= glm::normalize(glm::cross(front, up)) * speed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         pos += glm::normalize(glm::cross(front, up)) * speed;
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-
 }
 
 int main(int argc, char** argv)
@@ -114,7 +95,17 @@ int main(int argc, char** argv)
 
     stbi_set_flip_vertically_on_load(true);
 
+    Camera camera(800.f, 600.f, 90.f, 0.1f);
+
+    glfwSetWindowUserPointer(window, &camera);
+
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos)
+    {
+        Camera* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+        if (cam)
+            cam->mouse_callback(window, xpos, ypos);
+    }); // lamda in c++, wow
 
     if (glewInit() != GLEW_OK)
     {
@@ -124,20 +115,9 @@ int main(int argc, char** argv)
 
     Texture dirt("textures/blocks/dirt.png", 32, 32);
 
-    int success;
-    char infoLog[512];
-    
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);  
-    glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
-    glm::vec3 cameraUp = glm::vec3(0.f, 1.f, 0.f);
-
-    std::string vertexShaderFile   = openShaderFile("shaders/vertex.glsl");
-    std::string fragmentShaderFile = openShaderFile("shaders/fragment.glsl");
-
-    const char* vertexCode = vertexShaderFile.c_str();
-    const char* fragmentCode = fragmentShaderFile.c_str();
-
     Shader shaderProg("shaders/vertex.glsl", "shaders/fragment.glsl");
+
+    Block dirtBlock(glm::vec3(0.f, 0.f, 0.f), &dirt, 32.f, 32.f, 32.f, false);
     
     GLuint VBO, VAO, EBO;
     glGenBuffers(1, &VBO); 
@@ -162,8 +142,6 @@ int main(int argc, char** argv)
     glEnableVertexAttribArray(2);
 
     shaderProg.run();
-
-    const float radius = 10.f;
     
     while (!glfwWindowShouldClose(window))
     {
@@ -179,30 +157,29 @@ int main(int argc, char** argv)
         
         shaderProg.setFloat("time", time);
 
-        input(window, cameraPos, cameraFront, cameraUp);
+        input(window, camera.position, camera.front, camera.up);
 
-        glm::mat4 model = glm::mat4(1.f);
-        //model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.f, 0.f, 0.f));
-        //model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
+        /*glm::mat4 model = glm::mat4(1.f);
+        model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.f, 0.f, 0.f));
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));*/
 
         glm::mat4 view = glm::mat4(1.f);
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = camera.getCameraView();
         glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 proj;
-        proj = glm::perspective(glm::radians(45.f), 800.f / 600.f, 0.1f, 100.f);
+        proj = camera.getCameraProjection();
         glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
-        shaderProg.run();
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); -- usefull
 
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        shaderProg.run();
+        dirtBlock.draw(shaderProg);
+        /*glBindVertexArray(VAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
