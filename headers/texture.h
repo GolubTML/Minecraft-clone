@@ -11,4 +11,6 @@ public:
     Texture(const std::string& path, int w, int h);
     void bind();
     void unBind();
+
+    void getUV(float posX, float posY, float uv[8]);
 };

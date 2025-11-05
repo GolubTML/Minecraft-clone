@@ -36,3 +36,20 @@ void Texture::unBind()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+void Texture::getUV(float posX, float posY, float uv[8])
+{
+    const float tileSize = 16.0f; 
+
+    float u1  = (posX * tileSize) / (float)width;
+    float v1  = (posY * tileSize) / (float)height;
+    float u2 = ((posX + 1) * tileSize) / (float)width;
+    float v2 = ((posY + 1) * tileSize) / (float)height;
+
+    //std::swap(v1, v2);
+    
+    uv[0] = u1; uv[1] = v2;
+    uv[2] = u2; uv[3] = v2;
+    uv[4] = u2; uv[5] = v1;
+    uv[6] = u1; uv[7] = v1;
+}

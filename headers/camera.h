@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "world.h"
 
 class GLFWwindow;
 
@@ -14,13 +15,13 @@ public:
     float fov = 45.f;
     float sensivity = 0.1f;
 
-    Camera(float w, float h, float f, float sens);
+    Camera(glm::vec3 pos, float w, float h, float f, float sens);
 
     glm::mat4 getCameraView() const;
     glm::mat4 getCameraProjection() const;
 
-    void draw();
     void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+    bool isChunkVisible(const Chunk& chunk);
 
 private:
     bool firstMouse = false;

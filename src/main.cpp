@@ -8,61 +8,22 @@
 #include <sstream>
 #include <string>
 #include <ctime>
+#include <chrono>
 
 #include "../headers/stb_image.h"
 #include "../headers/shader.h"
 #include "../headers/texture.h"
 #include "../headers/camera.h"
 #include "../headers/block.h"
+#include "../headers/world.h"
 
-float quadVertices[] =
+unsigned int getRandomSeed() 
 {
-    // X    Y     Z     R     G     B     U    V
-    -0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f,
-
-    // front face
-    -0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f,
-
-    // left face
-    -0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f,
-
-    // right face
-     0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f,
-
-    // bottom face
-    -0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f,
-
-    // top face
-    -0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.f, 1.f, 1.f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  1.f, 1.f, 1.f,  0.0f, 1.0f
-};
-
-unsigned int indeces[] = 
-{
-    0,1,2, 2,3,0,       // back
-    4,5,6, 6,7,4,       // front
-    8,9,10, 10,11,8,    // left
-    12,13,14, 14,15,12, // right
-    16,17,18, 18,19,16, // bottom
-    20,21,22, 22,23,20  // top
-};
+    using namespace std::chrono;
+    return static_cast<unsigned int>(
+        duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count()
+    );
+}
 
 void input(GLFWwindow* window, glm::vec3& pos, glm::vec3& front, glm::vec3& up)
 {
@@ -93,9 +54,9 @@ int main(int argc, char** argv)
         
     glfwMakeContextCurrent(window);
 
-    stbi_set_flip_vertically_on_load(true);
+    //stbi_set_flip_vertically_on_load(true);
 
-    Camera camera(800.f, 600.f, 90.f, 0.1f);
+    Camera camera(glm::vec3(0.f, 30.f, 0.f), 800.f, 600.f, 90.f, 0.1f);
 
     glfwSetWindowUserPointer(window, &camera);
 
@@ -113,35 +74,22 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    Texture dirt("textures/blocks/dirt.png", 32, 32);
+    /*glEnable(GL_CULL_FACE);  
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);*/
+    
+    Texture dirt("textures/blocks/blocks.png", 256, 256);
+    
+    World world(getRandomSeed(), &dirt);
 
     Shader shaderProg("shaders/vertex.glsl", "shaders/fragment.glsl");
 
-    Block dirtBlock(glm::vec3(0.f, 0.f, 0.f), &dirt, 32.f, 32.f, 32.f, false);
-    
-    GLuint VBO, VAO, EBO;
-    glGenBuffers(1, &VBO); 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indeces), &indeces, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    /*Block dirtBlock(glm::vec3(0.f, 0.f, 0.f), &dirt, 1.f, 1.f, 1.f, false, BlockType::Grass);
+    Block testBlock(glm::vec3(1.f, 0.f, 0.f), &dirt, 1.f, 1.f, 1.f, false, BlockType::Dirt);*/
 
     shaderProg.run();
+
+    world.generateWorld(2, 4);
     
     while (!glfwWindowShouldClose(window))
     {
@@ -159,11 +107,6 @@ int main(int argc, char** argv)
 
         input(window, camera.position, camera.front, camera.up);
 
-        /*glm::mat4 model = glm::mat4(1.f);
-        model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.f, 0.f, 0.f));
-        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));*/
-
         glm::mat4 view = glm::mat4(1.f);
         view = camera.getCameraView();
         glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -174,12 +117,11 @@ int main(int argc, char** argv)
 
 
         shaderProg.run();
-        dirtBlock.draw(shaderProg);
-        /*glBindVertexArray(VAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+        /*testBlock.draw(shaderProg);
+        dirtBlock.draw(shaderProg);*/
 
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+        world.draw(shaderProg, camera);
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
