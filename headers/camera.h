@@ -4,6 +4,12 @@
 
 class GLFWwindow;
 
+struct FrustumPlane
+{
+    glm::vec3 normal;
+    float distance;
+};
+
 class Camera
 {
 public:
@@ -20,10 +26,15 @@ public:
     glm::mat4 getCameraView() const;
     glm::mat4 getCameraProjection() const;
 
+    void updateFrustum(const glm::mat4& proj, const glm::mat4& view);
     void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+    
+    bool boxInFrustum(const AABB& box) const;
     bool isChunkVisible(const Chunk& chunk);
 
 private:
+    FrustumPlane frustum[6];
+
     bool firstMouse = false;
     float lastX = 0.f;
     float lastY = 0.f;

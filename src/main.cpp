@@ -74,6 +74,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    //glfwSwapInterval(0);
+
     /*glEnable(GL_CULL_FACE);  
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);*/
@@ -81,19 +83,26 @@ int main(int argc, char** argv)
     Texture dirt("textures/blocks/blocks.png", 256, 256);
     
     World world(getRandomSeed(), &dirt);
-
+    Block test(glm::vec3(10.f, 10.f, 10.f), &dirt, 32, 32, 32, false, BlockType::Dirt);
     Shader shaderProg("shaders/vertex.glsl", "shaders/fragment.glsl");
-
-    /*Block dirtBlock(glm::vec3(0.f, 0.f, 0.f), &dirt, 1.f, 1.f, 1.f, false, BlockType::Grass);
-    Block testBlock(glm::vec3(1.f, 0.f, 0.f), &dirt, 1.f, 1.f, 1.f, false, BlockType::Dirt);*/
 
     shaderProg.run();
 
-    world.generateWorld(2, 4);
+    world.generateWorld(10, 10);
+
+    float lastFrame = 0.0f;
+    float deltaTime = 0.0f;
     
     while (!glfwWindowShouldClose(window))
     {
         float time = glfwGetTime();
+        deltaTime = time - lastFrame;
+        lastFrame = time;
+
+        int fps = (int)(1.f / deltaTime);
+        std::string title = "Minecraft " + std::to_string(fps);
+
+        glfwSetWindowTitle(window, title.c_str());
 
         glEnable(GL_DEPTH_TEST);  
 
@@ -115,12 +124,13 @@ int main(int argc, char** argv)
         proj = camera.getCameraProjection();
         glUniformMatrix4fv(glGetUniformLocation(shaderProg.ID, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
-
+        camera.updateFrustum(proj, view);
+        
         shaderProg.run();
-        /*testBlock.draw(shaderProg);
-        dirtBlock.draw(shaderProg);*/
+        //test.draw(shaderProg);
+        /*dirtBlock.draw(shaderProg);*/
 
-        world.draw(shaderProg, camera);
+        world.draw(shaderProg, camera, false);
 
         glBindVertexArray(0);
 

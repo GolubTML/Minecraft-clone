@@ -41,7 +41,7 @@ public:
     bool debugMode = false;
     
     Block();
-    Block(bool solid, bool visible);
+    Block(bool solid, bool visible, BlockType type);
     Block(glm::vec3 pos, Texture* tex, float w, float h, float l, bool debug, BlockType type);
 
     BlockData getBlockData(BlockType& type);

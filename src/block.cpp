@@ -6,7 +6,7 @@
 
 Block::Block() : position(glm::vec3(0, 0, 0)), textureUp(nullptr), width(0), height(0), lenght(0), debugMode(false), type(BlockType::Air) { }
 
-Block::Block(bool solid, bool visible) : isSolid(solid), isVisible(visible)
+Block::Block(bool solid, bool visible, BlockType type) : isSolid(solid), isVisible(visible), type(type)
 {
     if (isSolid && isVisible)
     {
