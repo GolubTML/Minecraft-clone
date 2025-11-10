@@ -4,6 +4,7 @@ in vec3 fCol;
 in vec2 TexCoord;
 
 uniform float time;
+uniform bool isGrass;
 uniform sampler2D ourTexture;
 
 void main()

@@ -217,9 +217,22 @@ void World::generateChunk(const glm::ivec3& pos)
                 glm::vec3 worldPos = glm::vec3(wx, y, wz); 
 
                 BlockType type;
-                if (y < intHeight - 4) type = BlockType::Stone;
-                else if (y < intHeight) type = BlockType::Dirt;
-                else if (y == intHeight) type = BlockType::Grass;
+                if (y < intHeight - 16)
+                {
+                    type = BlockType::DiamondOre;
+                }
+                else if (y < intHeight - 4) 
+                {
+                    type = BlockType::Stone;
+                }
+                else if (y < intHeight) 
+                {
+                    type = BlockType::Dirt;
+                }
+                else if (y == intHeight) 
+                {
+                    type = BlockType::Grass;
+                }
                 else type = BlockType::Air;
 
                 bool solid = (type != BlockType::Air);

@@ -5,6 +5,16 @@
 class Texture;
 class Shader;
 
+enum class Face
+{
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back
+};
+
 enum BlockType
 {
     Air,
@@ -42,9 +52,6 @@ public:
     
     Block();
     Block(bool solid, bool visible, BlockType type);
-    Block(glm::vec3 pos, Texture* tex, float w, float h, float l, bool debug, BlockType type);
-
+    
     BlockData getBlockData(BlockType& type);
-
-    void draw(Shader& shader);
 };

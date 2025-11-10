@@ -12,16 +12,6 @@ constexpr int CHUNK_SIZE_Z = 16;
 class Texture;
 class Camera;
 
-enum class Face
-{
-    Top,
-    Bottom,
-    Left,
-    Right,
-    Front,
-    Back
-};
-
 struct AABB
 {
     glm::vec3 min;

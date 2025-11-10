@@ -16,6 +16,7 @@
 #include "../headers/camera.h"
 #include "../headers/block.h"
 #include "../headers/world.h"
+#include "../headers/debugWindow.h"
 
 unsigned int getRandomSeed() 
 {
@@ -78,20 +79,31 @@ int main(int argc, char** argv)
 
     /*glEnable(GL_CULL_FACE);  
     glCullFace(GL_BACK);
-    glFrontFace(GL_CW);*/
+    glFrontFace(GL_CCW);*/
+    bool isVisible = false, last = false;
+    
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    
+    ImGui::StyleColorsDark(); 
+    
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
     
     Texture dirt("textures/blocks/blocks.png", 256, 256);
     
     World world(getRandomSeed(), &dirt);
-    Block test(glm::vec3(10.f, 10.f, 10.f), &dirt, 32, 32, 32, false, BlockType::Dirt);
     Shader shaderProg("shaders/vertex.glsl", "shaders/fragment.glsl");
-
+    
     shaderProg.run();
-
+    
     world.generateWorld(10, 10);
-
+    
     float lastFrame = 0.0f;
     float deltaTime = 0.0f;
+    
+    static DebugWindow debugWindow;
     
     while (!glfwWindowShouldClose(window))
     {
@@ -101,6 +113,17 @@ int main(int argc, char** argv)
 
         int fps = (int)(1.f / deltaTime);
         std::string title = "Minecraft " + std::to_string(fps);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        bool now = (glfwGetKey(window, GLFW_KEY_F4) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT)) == GLFW_PRESS;
+        if (now && !last) isVisible = !isVisible;
+        last = now;
+
+        if (isVisible)
+            debugWindow.draw(window, camera, deltaTime);
 
         glfwSetWindowTitle(window, title.c_str());
 
@@ -134,9 +157,16 @@ int main(int argc, char** argv)
 
         glBindVertexArray(0);
 
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     
     glfwDestroyWindow(window);
 
