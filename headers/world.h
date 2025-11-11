@@ -51,12 +51,22 @@ struct ivec3_hash
     }
 };
 
+struct Sphere
+{
+    glm::vec3 center;
+    float radius;
+};
+
 class World
 {
 public:
     Texture* blocksTexture;
+    std::vector<Sphere> spheres;
     std::unordered_map<glm::ivec3, Chunk, ivec3_hash> chunks;
     unsigned int seed;
+
+    glm::vec3 getNoiseDirection(glm::vec3 point, float scale, unsigned int seed);
+    bool isItACave(float x, float y, float z, Sphere& s);
 
     World(unsigned int seed, Texture* tex);
 

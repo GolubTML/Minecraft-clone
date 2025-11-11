@@ -6,6 +6,8 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#define PI 3.141592653
  
 glm::vec3 AABB::getPositiveVertex(const glm::vec3& normal) const
 {
@@ -196,10 +198,31 @@ void Chunk::generateMesh()
     glBindVertexArray(0);
 }
 
+glm::vec3 World::getNoiseDirection(glm::vec3 point, float scale, unsigned int seed)
+{
+    float n1 = stb_perlin_noise3_seed(point.x * scale, point.y * scale, point.z * scale, 0, 0, 0, seed);
+    float n2 = stb_perlin_noise3_seed(point.x * scale + 100, point.y * scale + 100, point.z * scale + 100, 0, 0, 0, seed + 1);
+
+    float theta = n1 * 2.f * PI;
+    float phi = (n2 + 0.5f + 0.5f) * PI;
+
+    return glm::normalize(glm::vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi)));
+}
+
+bool World::isItACave(float x, float y, float z, Sphere& s)
+{
+    float dx = x - s.center.x;
+    float dy = y - s.center.y;
+    float dz = z - s.center.z;
+
+    return pow(dx, 2) + pow(dy, 2) + pow(dz, 2) <= pow(s.radius, 2);
+}
+
 World::World(unsigned int seed, Texture* tex) : seed(seed), blocksTexture(tex) { }
 
 void World::generateChunk(const glm::ivec3& pos)
 {
+    Sphere s = { glm::vec3(0, 0, 0), 5.f };
     Chunk chunk(pos * glm::ivec3(CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z), blocksTexture);
 
     for (int x = 0; x < CHUNK_SIZE_X; ++x) 
@@ -217,7 +240,11 @@ void World::generateChunk(const glm::ivec3& pos)
                 glm::vec3 worldPos = glm::vec3(wx, y, wz); 
 
                 BlockType type;
-                if (y < intHeight - 16)
+                if (isItACave(x, y, z, s))
+                {
+                    type = BlockType::Air;
+                }
+                else if (y < intHeight - 16)
                 {
                     type = BlockType::DiamondOre;
                 }
